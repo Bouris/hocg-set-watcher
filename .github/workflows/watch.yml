@@ -1,0 +1,27 @@
+name: Vigilar hBP07
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      buscar:
+        description: "Texto a buscar (vacio = hbp07). Util para probar."
+        required: false
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: watch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Revisar sitemap
+        run: python3 watch.py
+        env:
+          BUSCAR: ${{ inputs.buscar }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
