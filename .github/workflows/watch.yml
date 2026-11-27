@@ -1,11 +1,11 @@
-name: Vigilar hBP07
+name: Vigilar set GrandJGames
 on:
   schedule:
     - cron: "8,23,38,53 * * * *"
   workflow_dispatch:
     inputs:
       buscar:
-        description: "Texto a buscar (vacio = hbp07). Util para probar."
+        description: "Solo para probar (no apaga el workflow). Vacio = variable BUSCAR o hbp07."
         required: false
 permissions:
   actions: write
@@ -18,10 +18,28 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+
+      - name: Restaurar estado
+        uses: actions/cache/restore@v4
+        with:
+          path: .estado/estado.json
+          key: estado-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: estado-
+
       - name: Revisar sitemap
+        id: watch
         run: python3 watch.py
         env:
           BUSCAR: ${{ inputs.buscar }}
+          BUSCAR_VAR: ${{ vars.BUSCAR }}
+          ESTADO_PATH: .estado/estado.json
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+
+      - name: Guardar estado
+        if: always() && steps.watch.outputs.estado_cambio == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .estado/estado.json
+          key: estado-${{ github.run_id }}-${{ github.run_attempt }}
